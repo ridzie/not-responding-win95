@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Task Manager - Not Responding</title>
   <style>
-    /* Basic reset */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -18,27 +17,27 @@
       background-color: #008080; /* Win95 teal desktop */
       height: 100vh;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
+      padding-top: 24px;
       color: #000;
     }
 
     .desktop {
       width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 8px;
+      max-width: 420px;
+      height: calc(100vh - 48px);
+      position: relative; /* for absolutely positioned windows */
     }
 
     .window {
       width: min(360px, 94vw);
       background-color: #c0c0c0;
       border: 2px solid #000;
-      box-shadow: 0 0 0 1px #fff;
+      box-shadow: 0 0 0 1px #fff, 3px 3px 0 rgba(0, 0, 0, 0.4);
       display: flex;
       flex-direction: column;
+      position: absolute; /* allows cascading */
     }
 
     /* Title bar */
@@ -57,6 +56,13 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .title-hint {
+      font-weight: normal;
+      font-size: 11px;
+      opacity: 0.9;
+      margin-left: 4px;
     }
 
     .title-bar-controls {
@@ -112,7 +118,7 @@
       font-weight: bold;
     }
 
-    /* Fake task list area */
+    /* Fake task list */
     .task-list {
       border: 2px solid #808080;
       box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #404040;
@@ -123,7 +129,8 @@
       gap: 2px;
     }
 
-    .task-header, .task-row {
+    .task-header,
+    .task-row {
       display: grid;
       grid-template-columns: 2fr 1fr;
       font-size: 11px;
@@ -140,7 +147,6 @@
       text-align: right;
     }
 
-    /* Message */
     .message-box {
       border: 2px solid #808080;
       box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #404040;
@@ -150,7 +156,6 @@
       line-height: 1.4;
     }
 
-    /* Buttons */
     .button-row {
       display: flex;
       justify-content: flex-end;
@@ -175,18 +180,11 @@
     .button-row .primary {
       font-weight: bold;
     }
-
-    /* Small "Not Responding" hint in title bar */
-    .title-hint {
-      font-weight: normal;
-      font-size: 11px;
-      opacity: 0.9;
-      margin-left: 4px;
-    }
   </style>
 </head>
 <body>
   <div class="desktop">
+    <!-- Base window; JS will clone this for stacking -->
     <div class="window">
       <div class="title-bar">
         <div class="title-bar-text">
@@ -243,23 +241,74 @@
       </div>
 
       <div class="button-row">
-        <button class="primary" id="endTaskButton">End Task</button>
-        <button id="cancelButton">Cancel</button>
+        <!-- Note: class names, not IDs, so clones stay valid -->
+        <button class="primary end-task">End Task</button>
+        <button class="cancel-task">Cancel</button>
       </div>
     </div>
   </div>
 
   <script>
-    // Endless "not responding": reloads the same page.
-    document.getElementById("endTaskButton").addEventListener("click", function () {
-      location.reload();
-    });
+    // How many windows we allow in the stack
+    const MAX_WINDOWS = 6;
+    const BASE_TOP = 16;
+    const BASE_LEFT = 16;
+    const OFFSET_Y = 18; // cascade offset
+    const OFFSET_X = 12;
 
-    // Optional: Cancel also does nothing useful.
-    document.getElementById("cancelButton").addEventListener("click", function () {
-      // Intentionally useless – it’s "not responding"
-      // You can also reload here if you want:
-      // location.reload();
+    const desktop = document.querySelector(".desktop");
+    const baseWindow = document.querySelector(".window");
+
+    let windowCount = 1;
+
+    function updateWindowPositions() {
+      const windows = desktop.querySelectorAll(".window");
+      windows.forEach((win, index) => {
+        win.style.top = BASE_TOP + index * OFFSET_Y + "px";
+        win.style.left = BASE_LEFT + index * OFFSET_X + "px";
+        win.style.zIndex = 100 + index;
+      });
+    }
+
+    function cloneWindow() {
+      const newWindow = baseWindow.cloneNode(true);
+      desktop.appendChild(newWindow);
+      windowCount++;
+      updateWindowPositions();
+    }
+
+    function resetWindows() {
+      const windows = desktop.querySelectorAll(".window");
+      windows.forEach((win, index) => {
+        if (index === 0) {
+          // keep original
+          return;
+        }
+        win.remove();
+      });
+      windowCount = 1;
+      updateWindowPositions();
+    }
+
+    // Initial positioning of the first window
+    updateWindowPositions();
+
+    // Event delegation for all "End Task" buttons, including clones
+    desktop.addEventListener("click", (event) => {
+      const endBtn = event.target.closest(".end-task");
+      if (endBtn) {
+        if (windowCount < MAX_WINDOWS) {
+          cloneWindow();      // stack another Task Manager window
+        } else {
+          resetWindows();     // back to a single original window
+        }
+      }
+
+      // Cancel does nothing (it's "not responding")
+      const cancelBtn = event.target.closest(".cancel-task");
+      if (cancelBtn) {
+        // Intentionally useless
+      }
     });
   </script>
 </body>
