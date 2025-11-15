@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="icon" type="image/png" href="fav.ico" />
-  <link rel="apple-touch-icon" href="fav.ico" />
   <meta charset="UTF-8" />
   <meta
     name="viewport"
@@ -11,6 +9,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Task Manager - Not Responding</title>
+
+  <!-- Favicon (your fav.ico PNG) -->
+  <link rel="icon" type="image/png" href="fav.ico" />
+  <link rel="apple-touch-icon" href="fav.ico" />
+
   <style>
     * {
       box-sizing: border-box;
@@ -258,19 +261,16 @@
     </div>
   </div>
 
-  <!-- Error sound (triggered on End Task click) -->
+  <!-- Local error sound -->
   <audio
     id="error-sound"
     preload="auto"
-    src="https://creatorset-public.s3.us-east-1.amazonaws.com/public-audio/Windows+Xp+Error+(Sound+Effect).mp3"
+    src="audio/error.mp3"
   ></audio>
-  <!-- If this URL ever stops working, download from:
-       https://soundbible.com/1540-Computer-Error-Alert.html
-       and host the MP3 yourself. -->
 
   <script>
     // Change this to set how many windows can stack before reset:
-    const MAX_WINDOWS = 12;
+    const MAX_WINDOWS = 6;
 
     const OFFSET_Y = 18;
     const OFFSET_X = 12;
@@ -330,7 +330,7 @@
           p.catch(() => {});
         }
       } catch (e) {
-        // ignore
+        // ignore audio errors
       }
     }
 
@@ -351,7 +351,7 @@
 
       const cancelBtn = event.target.closest(".cancel-task");
       if (cancelBtn) {
-        // Do nothing – it's "not responding"
+        // Intentionally do nothing
       }
     });
   </script>
