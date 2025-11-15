@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/png" href="fav.ico" />
+  <link rel="apple-touch-icon" href="fav.ico" />
   <meta charset="UTF-8" />
   <meta
     name="viewport"
@@ -26,7 +28,6 @@
         Tahoma, Geneva, Verdana, sans-serif;
       background-color: #008080; /* Win95 teal desktop */
       color: #000;
-      /* Respect iPhone/iPad safe areas (notch, home bar) */
       padding-top: env(safe-area-inset-top, 0);
       padding-right: env(safe-area-inset-right, 0);
       padding-bottom: env(safe-area-inset-bottom, 0);
@@ -53,7 +54,6 @@
       flex-direction: column;
     }
 
-    /* Title bar */
     .title-bar {
       background: linear-gradient(to right, #000080, #1084d0);
       display: flex;
@@ -99,7 +99,6 @@
       box-shadow: inset 1px 1px 0 #808080, inset -1px -1px 0 #fff;
     }
 
-    /* Menu bar */
     .menu-bar {
       display: flex;
       gap: 12px;
@@ -107,7 +106,6 @@
       font-size: 12px;
     }
 
-    /* Content */
     .content {
       padding: 8px;
       font-size: 12px;
@@ -132,7 +130,6 @@
       font-weight: bold;
     }
 
-    /* Fake task list */
     .task-list {
       border: 2px solid #808080;
       box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #404040;
@@ -199,7 +196,6 @@
 </head>
 <body>
   <div class="desktop">
-    <!-- Base window; JS will clone this for stacking -->
     <div class="window">
       <div class="title-bar">
         <div class="title-bar-text">
@@ -256,20 +252,32 @@
       </div>
 
       <div class="button-row">
-        <!-- class-based hooks so clones work -->
         <button class="primary end-task">End Task</button>
         <button class="cancel-task">Cancel</button>
       </div>
     </div>
   </div>
 
+  <!-- Error sound (triggered on End Task click) -->
+  <audio
+    id="error-sound"
+    preload="auto"
+    src="https://creatorset-public.s3.us-east-1.amazonaws.com/public-audio/Windows+Xp+Error+(Sound+Effect).mp3"
+  ></audio>
+  <!-- If this URL ever stops working, download from:
+       https://soundbible.com/1540-Computer-Error-Alert.html
+       and host the MP3 yourself. -->
+
   <script>
-    const MAX_WINDOWS = 6;
+    // Change this to set how many windows can stack before reset:
+    const MAX_WINDOWS = 12;
+
     const OFFSET_Y = 18;
     const OFFSET_X = 12;
 
     const desktop = document.querySelector(".desktop");
     const baseWindow = document.querySelector(".window");
+    const errorSound = document.getElementById("error-sound");
 
     let windowCount = 1;
 
@@ -277,7 +285,6 @@
       const windows = desktop.querySelectorAll(".window");
       if (!windows.length) return;
 
-      // Use the first window to measure size
       const rect = windows[0].getBoundingClientRect();
       const winWidth = rect.width || 320;
       const winHeight = rect.height || 200;
@@ -314,14 +321,27 @@
       updateWindowPositions();
     }
 
-    // Initial center
+    function playErrorSound() {
+      if (!errorSound) return;
+      try {
+        errorSound.currentTime = 0;
+        const p = errorSound.play();
+        if (p && typeof p.catch === "function") {
+          p.catch(() => {});
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
     window.addEventListener("load", updateWindowPositions);
     window.addEventListener("resize", updateWindowPositions);
 
-    // Event delegation for all End Task / Cancel buttons
     desktop.addEventListener("click", (event) => {
       const endBtn = event.target.closest(".end-task");
       if (endBtn) {
+        playErrorSound();
+
         if (windowCount < MAX_WINDOWS) {
           cloneWindow();
         } else {
@@ -331,7 +351,7 @@
 
       const cancelBtn = event.target.closest(".cancel-task");
       if (cancelBtn) {
-        // "Not responding" – do nothing
+        // Do nothing – it's "not responding"
       }
     });
   </script>
